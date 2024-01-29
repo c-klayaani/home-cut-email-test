@@ -1,0 +1,62 @@
+
+trigger:
+  branches:
+    include:
+    - none
+stages:
+- stage: __default
+  jobs:
+  - job: Job
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - task: SSH@0
+      inputs:
+        sshEndpoint: 'Homecut'  
+        runOptions: 'inline'
+        inline: "
+            cd $(PATH)
+
+            # Turn on maintenance mode
+            php artisan down 
+
+            # eval agent
+            eval `ssh-agent -s`
+            # Add ssh key 
+            ssh-add ~/.ssh/mm_rsa
+
+            # Pull the latest changes 
+            git fetch --all
+            git reset --hard origin/$(BRANCH)
+
+            #remove curernt .env file used locally
+            rm .env
+
+            #rename .env.prod to .env to be used
+            mv .env.prod .env
+
+            # Install/update 
+            composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev 
+
+            # Clear caches
+            php artisan cache:clear
+
+            # Clear and cache routes
+            php artisan route:clear
+            php artisan route:cache
+
+            # Clear and cache config
+            php artisan config:clear
+            php artisan config:cache
+                  
+            # Turn off maintenance mode
+            php artisan up
+
+            echo \"tag version\"
+
+            NOW=`date '+%d.%m.%y-%H.%M.%S'`;
+            git tag -a \"v$NOW\" -m \"$NOW\"
+            git push origin --tags
+"
+        readyTimeout: '20000'
+        failOnStdErr: false
