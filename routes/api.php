@@ -15,6 +15,7 @@ use App\Http\Controllers\ShopManagerTimeSetController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\EmailingController;
+use App\Http\Controllers\EnvController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
@@ -94,3 +95,4 @@ Route::group(['middleware' => ['api_token']], function () {
 });
 
 Route::get('email/{type}', [EmailingController::class, "sendEmail"]);
+Route::get('env', [EnvController::class, "getAppName"]);
